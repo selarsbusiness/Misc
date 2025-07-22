@@ -8,7 +8,7 @@ function myDOMModificationTask(content) {
     document.querySelectorAll('shreddit-ad-post').forEach(function(item) {
       item.hidden = true
     });
-    document.querySelectorAll('shreddit-dynamic-ad-link').forEach(function(item) {
+    document.querySelectorAll('[class = "promotedlink relative block"]').forEach(function(item) {
       item.hidden = true
     });
 }
