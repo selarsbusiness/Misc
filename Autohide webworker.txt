@@ -1,0 +1,63 @@
+// 1. Define the task you want to repeat on the DOM
+// This function will be executed on the main thread
+function myDOMModificationTask(content) {
+    document.querySelectorAll('shreddit-ad-post').forEach(function(item) {
+      item.hidden = true
+    });
+    document.querySelectorAll('shreddit-dynamic-ad-link').forEach(function(item) {
+      item.hidden = true
+    });
+}
+
+// 2. Create the Web Worker script as a Blob
+const workerScriptContent = `
+    self.onmessage = function(event) {
+        const { interval, messageContent } = event.data;
+
+        // Function to send a message back to the main thread
+        const sendDomUpdate = () => {
+            self.postMessage({ type: 'domUpdate', content: messageContent });
+        };
+
+        // Immediately send the first update
+        sendDomUpdate();
+
+        // Set up the interval to send messages
+        setInterval(sendDomUpdate, interval);
+    };
+`;
+
+const blob = new Blob([workerScriptContent], { type: 'application/javascript' });
+const workerURL = URL.createObjectURL(blob);
+
+// 3. Create the Web Worker instance
+const myWorker = new Worker(workerURL);
+
+// 4. Listen for messages from the Web Worker
+myWorker.onmessage = function(event) {
+    if (event.data.type === 'domUpdate') {
+        myDOMModificationTask(event.data.content);
+    }
+};
+
+// 5. Start the worker by sending it initial data
+// The worker will send a message every 3 seconds (3000ms)
+myWorker.postMessage({
+    interval: 3000, // Repeat every 3 seconds
+    messageContent: 'Hello from the Web Worker!'
+});
+
+console.log('Web Worker initiated. Check the bottom right for updates or console for messages.');
+
+// Optional: Function to terminate the worker
+window.terminateMyWorker = function() {
+    if (myWorker) {
+        myWorker.terminate();
+        URL.revokeObjectURL(workerURL); // Clean up the Blob URL
+        console.log('Web Worker terminated and URL revoked.');
+        const div = document.getElementById('workerOutput');
+        if (div) {
+            div.remove();
+        }
+    }
+};
