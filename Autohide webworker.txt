@@ -1,3 +1,7 @@
+// This "Tool" if you can call it that is to be pasted into the console to hide adds when browsing as they tends to muddy results needed when researching
+// Usage: Copy paste this file's contents into the web console after hitting f12 and press enter
+// Note: It may make the browser a bit slower, to get rid of the process you can always just close the tab and go about your day. This is purely for educational purposes and is not intended to do anything more than prove a general concept to myself and will likely not be maintained.
+
 // 1. Define the task you want to repeat on the DOM
 // This function will be executed on the main thread
 function myDOMModificationTask(content) {
