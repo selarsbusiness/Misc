@@ -132,6 +132,24 @@
                     const scriptSnippet = `
 // This script injects CSV data into the body of the current page.
 (function() {
+    function checkPage(stringToCheck) {
+    // Get all elements on the page
+    const allElements = document.querySelectorAll('*');
+    alreadyWarned = false;
+    // create array from stringToCheck
+    const arrayToCheck = JSON.parse(stringToCheck);
+    console.log(arrayToCheck);
+    // Loop through each element
+    allElements.forEach(element => {
+        // Check if the element's text content contains the search string
+        for  (let i = 0; i < arrayToCheck[0].length; i++) {
+            if (element.outerText && element.outerText.startsWith(arrayToCheck[0][i] + "\\n") && element.className.includes("job-match-item") && !element.ariaHidden === true && !alreadyWarned) {
+                alert("You have already applied here!");
+                alreadyWarned = true;
+            }
+        }
+    });
+    }
     let injectedDiv = document.getElementById('csvInjectedDataContainer');
     if (!injectedDiv) {
         injectedDiv = document.createElement('div');
@@ -148,6 +166,12 @@
         const preElement = document.createElement('pre');
         preElement.id = 'csvInjectedDataPre';
         injectedDiv.appendChild(preElement);
+
+        const checkPageBtn = document.createElement('button');
+        checkPageBtn.textContent = 'Check Page';
+        checkPageBtn.style.cssText = 'position: absolute; top: 5px; right: 5px; background: none; border: none; color: white; font-size: 16px; cursor: pointer;';
+        checkPageBtn.onclick = () => checkPage(\`${dataToInject}\`);
+        injectedDiv.appendChild(checkPageBtn);
 
         const closeBtn = document.createElement('button');
         closeBtn.textContent = 'X';
