@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Data Injector</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">CSV Data Injector</h1>
+
+        <p class="text-gray-600 mb-6 text-center">
+            Upload a CSV file, generate a script, and then paste the script into your browser's developer console to inject the data directly into the body of the page.
+        </p>
+
+        <div class="mb-6">
+            <label for="csvFile" class="block text-gray-700 text-sm font-bold mb-2">
+                Select CSV File:
+            </label>
+            <input type="file" id="csvFile" accept=".csv" class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100 cursor-pointer">
+        </div>
+
+        <div class="flex justify-center mb-6">
+            <button id="generateScriptBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md
+                transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                Generate Injection Script
+            </button>
+        </div>
+
+        <div id="scriptOutputContainer" class="hidden mb-6">
+            <label for="injectionScript" class="block text-gray-700 text-sm font-bold mb-2">
+                Copy this script to your browser console:
+            </label>
+            <textarea id="injectionScript" rows="10" readonly
+                class="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 font-mono text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            <button id="copyScriptBtn" class="mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md
+                transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
+                Copy Script
+            </button>
+            <p id="copyMessage" class="text-sm text-green-700 mt-2 hidden">Copied to clipboard!</p>
+        </div>
+
+        <div id="messageBox" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+                <p id="messageText" class="text-gray-800 text-lg mb-4"></p>
+                <button id="closeMessageBox" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to show a custom message box instead of alert()
+        function showMessageBox(message) {
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+            messageText.textContent = message;
+            messageBox.classList.remove('hidden');
+        }
+
+        // Event listener for closing the message box
+        document.getElementById('closeMessageBox').addEventListener('click', () => {
+            document.getElementById('messageBox').classList.add('hidden');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const csvFile = document.getElementById('csvFile');
+            const generateScriptBtn = document.getElementById('generateScriptBtn');
+            const scriptOutputContainer = document.getElementById('scriptOutputContainer');
+            const injectionScript = document.getElementById('injectionScript');
+            const copyScriptBtn = document.getElementById('copyScriptBtn');
+            const copyMessage = document.getElementById('copyMessage');
+
+            generateScriptBtn.addEventListener('click', () => {
+                const file = csvFile.files[0];
+                if (!file) {
+                    showMessageBox('Please select a CSV file first.');
+                    return;
+                }
+
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    const csvText = e.target.result;
+                    let parsedData;
+                    try {
+                        // Simple CSV parsing: split by new line, then by comma
+                        // This assumes a basic CSV structure without complex escaping
+                        const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== ''); // Remove empty lines
+                        if (lines.length === 0) {
+                            showMessageBox('The CSV file is empty or could not be parsed.');
+                            return;
+                        }
+
+                        // Assuming the first row is headers uncomment if headers are used
+                        // const headers = lines[0].split(',').map(header => header.trim());
+                        parsedData = [];
+
+                        for (let i = 0; i < lines.length; i++) {
+                            const values = lines[i].split(',').map(value => value.trim());
+                            const rowObject = {};
+                            // headers.forEach((header, index) => {
+                            //     rowObject[header] = values[index] || ''; // Assign value or empty string if missing
+                            // });
+                            parsedData.push(values);
+                        }
+
+                    } catch (error) {
+                        console.error("Error parsing CSV:", error);
+                        showMessageBox('Error parsing CSV file. Please ensure it is a valid CSV format.');
+                        return;
+                    }
+
+                    // Stringify the parsed data to be injected as a JSON string
+                    const dataToInject = JSON.stringify(parsedData, null, 2);
+
+                    // Construct the JavaScript snippet for the console
+                    const scriptSnippet = `
+// This script injects CSV data into the body of the current page.
+(function() {
+    let injectedDiv = document.getElementById('csvInjectedDataContainer');
+    if (!injectedDiv) {
+        injectedDiv = document.createElement('div');
+        injectedDiv.id = 'csvInjectedDataContainer';
+        // Basic styling to make the injected data visible and manageable
+        injectedDiv.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background-color: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 8px; z-index: 9999; max-width: 300px; max-height: 200px; overflow: auto; font-family: monospace; font-size: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);';
+        document.body.appendChild(injectedDiv);
+
+        const title = document.createElement('div');
+        title.textContent = 'Injected CSV Data:';
+        title.style.cssText = 'font-weight: bold; margin-bottom: 5px;';
+        injectedDiv.appendChild(title);
+
+        const preElement = document.createElement('pre');
+        preElement.id = 'csvInjectedDataPre';
+        injectedDiv.appendChild(preElement);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'X';
+        closeBtn.style.cssText = 'position: absolute; top: 5px; right: 5px; background: none; border: none; color: white; font-size: 16px; cursor: pointer;';
+        closeBtn.onclick = () => injectedDiv.remove();
+        injectedDiv.appendChild(closeBtn);
+
+    }
+    const preElement = document.getElementById('csvInjectedDataPre');
+    if (preElement) {
+        preElement.textContent = \`${dataToInject}\`;
+        console.log('CSV data successfully injected into the body (element #csvInjectedDataContainer).');
+        console.log('Injected Data:', JSON.parse(preElement.textContent));
+    } else {
+        console.error('Could not find #csvInjectedDataPre inside #csvInjectedDataContainer.');
+    }
+})();
+                    `;
+
+                    injectionScript.value = scriptSnippet;
+                    scriptOutputContainer.classList.remove('hidden');
+                };
+
+                reader.onerror = () => {
+                    showMessageBox('Error reading file.');
+                };
+
+                reader.readAsText(file);
+            });
+
+            copyScriptBtn.addEventListener('click', () => {
+                injectionScript.select();
+                document.execCommand('copy'); // Fallback for navigator.clipboard.writeText()
+                copyMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    copyMessage.classList.add('hidden');
+                }, 2000); // Hide message after 2 seconds
+            });
+        });
+    </script>
+</body>
+</html>
