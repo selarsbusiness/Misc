@@ -63,6 +63,58 @@
         </div>
     </div>
 
+    <!-- CSV Management Component -->
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl mt-8">
+        <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">CSV File Manager</h2>
+        
+        <div class="mb-6">
+            <label for="csvSelect" class="block text-gray-700 text-sm font-bold mb-2">
+                Select CSV File to Manage:
+            </label>
+            <div class="flex gap-2">
+                <input type="file" id="csvSelect" accept=".csv" class="flex-1 text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-green-50 file:text-green-700
+                    hover:file:bg-green-100 cursor-pointer">
+                <button id="loadCsvBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">
+                    Load File
+                </button>
+            </div>
+        </div>
+
+        <div id="csvContent" class="hidden">
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Current Items:</h3>
+                <div id="csvItemsList" class="border rounded-lg p-3 bg-gray-50 max-h-60 overflow-y-auto mb-4">
+                    <!-- Items will be listed here -->
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <label for="newColumnInput" class="block text-gray-700 text-sm font-bold">
+                        Add New Column:
+                    </label>
+                    <button id="addColumnBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-1 px-3 rounded">
+                        + Add Column
+                    </button>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="newColumnInput" class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" 
+                           placeholder="Enter column name">
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button id="saveCsvBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Function to show a custom message box instead of alert()
         function showMessageBox(message) {
@@ -217,6 +269,192 @@
                 setTimeout(() => {
                     copyMessage.classList.add('hidden');
                 }, 2000); // Hide message after 2 seconds
+            });
+        });
+
+        // CSV Management Functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const csvSelect = document.getElementById('csvSelect');
+            const loadCsvBtn = document.getElementById('loadCsvBtn');
+            const csvContent = document.getElementById('csvContent');
+            const csvItemsList = document.getElementById('csvItemsList');
+            const newItemInput = document.getElementById('newItemInput');
+            const addItemBtn = document.getElementById('addItemBtn');
+            const saveCsvBtn = document.getElementById('saveCsvBtn');
+            
+            let currentCsvFile = null;
+            let csvData = [];
+
+            // Load CSV file
+            loadCsvBtn.addEventListener('click', () => {
+                const file = csvSelect.files[0];
+                if (!file) {
+                    showMessageBox('Please select a CSV file first.');
+                    return;
+                }
+
+                currentCsvFile = file;
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    try {
+                        const text = e.target.result;
+                        // Parse CSV (simple implementation - assumes no commas in values)
+                        csvData = text.split('\n')
+                            .filter(line => line.trim() !== '')
+                            .map(line => line.split(',').map(item => item.trim()));
+                        
+                        displayCsvItems();
+                        csvContent.classList.remove('hidden');
+                    } catch (error) {
+                        console.error('Error parsing CSV:', error);
+                        showMessageBox('Error parsing CSV file. Please ensure it is a valid CSV format.');
+                    }
+                };
+
+                reader.onerror = () => {
+                    showMessageBox('Error reading the file.');
+                };
+
+                reader.readAsText(file);
+            });
+
+            // Display and manage the first row as columns
+            function displayCsvItems() {
+                csvItemsList.innerHTML = '';
+                
+                // Initialize empty array if no data exists
+                if (csvData.length === 0) {
+                    csvData = [[]];
+                }
+                
+                const firstRow = csvData[0] || [];
+                
+                const table = document.createElement('table');
+                table.className = 'min-w-full divide-y divide-gray-200';
+                
+                // Create table header
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                headerRow.className = 'bg-gray-100';
+                
+                // Add column headers with delete buttons
+                firstRow.forEach((cell, index) => {
+                    const th = document.createElement('th');
+                    th.className = 'px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider group';
+                    
+                    const headerContainer = document.createElement('div');
+                    headerContainer.className = 'flex items-center justify-between';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = cell;
+                    input.className = 'bg-transparent border-b border-transparent focus:border-gray-400 focus:outline-none w-full';
+                    input.placeholder = `Column ${index + 1}`;
+                    input.addEventListener('change', (e) => {
+                        firstRow[index] = e.target.value;
+                    });
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'ml-2 text-red-500 opacity-0 group-hover:opacity-100';
+                    deleteBtn.innerHTML = '×';
+                    deleteBtn.title = 'Delete column';
+                    deleteBtn.onclick = () => {
+                        firstRow.splice(index, 1);
+                        displayCsvItems();
+                    };
+                    
+                    headerContainer.appendChild(input);
+                    headerContainer.appendChild(deleteBtn);
+                    th.appendChild(headerContainer);
+                    headerRow.appendChild(th);
+                });
+                
+                // Add empty header for the add column button
+                const addTh = document.createElement('th');
+                addTh.className = 'px-4 py-2';
+                headerRow.appendChild(addTh);
+                
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+                
+                // Show a message if no columns exist
+                if (firstRow.length === 0) {
+                    const message = document.createElement('div');
+                    message.className = 'text-gray-500 text-center py-4';
+                    message.textContent = 'No columns. Click "+ Add Column" to get started.';
+                    csvItemsList.appendChild(message);
+                } else {
+                    csvItemsList.appendChild(table);
+                }
+                
+                // Show a message about additional rows if they exist
+                if (csvData.length > 1) {
+                    const message = document.createElement('div');
+                    message.className = 'mt-2 text-sm text-gray-600';
+                    message.textContent = `Note: Only the first row is shown. ${csvData.length - 1} additional row(s) are not displayed.`;
+                    csvItemsList.appendChild(message);
+                }
+            }
+
+            // Add new column
+            document.getElementById('addColumnBtn').addEventListener('click', () => {
+                const columnName = document.getElementById('newColumnInput').value.trim();
+                
+                // Initialize first row if it doesn't exist
+                if (csvData.length === 0) {
+                    csvData = [[]];
+                }
+                
+                // Add the new column
+                csvData[0].push(columnName || `Column ${csvData[0].length + 1}`);
+                
+                // Clear the input
+                document.getElementById('newColumnInput').value = '';
+                
+                // Refresh the display
+                displayCsvItems();
+            });
+            
+            // Allow pressing Enter in the input field to add a column
+            document.getElementById('newColumnInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('addColumnBtn').click();
+                }
+            });
+
+            // Save changes back to file
+            saveCsvBtn.addEventListener('click', () => {
+                if (!currentCsvFile) return;
+
+                // Convert data back to CSV format
+                const csvContent = csvData.map(row => 
+                    row.map(cell => 
+                        // Simple escaping: wrap in quotes if contains comma or newline
+                        cell.includes(',') || cell.includes('\n') ? `"${cell.replace(/"/g, '""')}"` : cell
+                    ).join(',')
+                ).join('\n');
+
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = currentCsvFile.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showMessageBox('CSV file has been updated and downloaded.');
+            });
+
+            // Allow pressing Enter in the input field to add an item
+            newItemInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addItemBtn.click();
+                }
             });
         });
     </script>
