@@ -134,6 +134,7 @@
 (function() {
     function checkPage(stringToCheck) {
     // Get all elements on the page
+    const webPageLocation = window.location.href;
     const allElements = document.querySelectorAll('*');
     alreadyWarned = false;
     // create array from stringToCheck
@@ -143,12 +144,19 @@
     allElements.forEach(element => {
         // Check if the element's text content contains the search string
         for  (let i = 0; i < arrayToCheck[0].length; i++) {
+        if (webPageLocation.includes("builtin")) {
             if (element.outerText && element.outerText.startsWith(arrayToCheck[0][i] + "\\n") && element.className.includes("job-match-item") && !element.ariaHidden === true && !alreadyWarned) {
                 alert("You have already applied here!");
                 alreadyWarned = true;
             }
         }
-    });
+        if (webPageLocation.includes("welcometothejungle")) {
+            if (element.className && element.className.includes && element.className.includes("kSSTOp") && element.childNodes[3].textContent.startsWith(arrayToCheck[0][i]) && !alreadyWarned) {
+                alert("You have already applied here!");
+                alreadyWarned = true;
+            }
+        }
+    }});
     }
     let injectedDiv = document.getElementById('csvInjectedDataContainer');
     if (!injectedDiv) {
