@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Web Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+
+        textarea[readonly] {
+            background-color: #f5f5f5;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-secondary:disabled {
+            background: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Python Web Application</h1>
+        <p class="subtitle">Process input through client and API functions</p>
+
+        <div class="status" id="status"></div>
+
+        <form id="mainForm">
+            <div class="form-group">
+                <label for="userInput">User Input</label>
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    placeholder="Enter text to process..." 
+                    required
+                >
+                <p class="info-text">Enter any text you want to process</p>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-primary" id="processBtn">
+                    Process Input
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label for="processedOutput">Processed Output</label>
+                <textarea 
+                    id="processedOutput" 
+                    readonly
+                    placeholder="Result will appear here..."
+                ></textarea>
+                <p class="info-text">Read-only field containing the processed result</p>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" id="apiCallBtn" disabled>
+                    Call API Function
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label for="apiResult">API Result</label>
+                <textarea 
+                    id="apiResult" 
+                    readonly
+                    placeholder="API response will appear here..."
+                ></textarea>
+                <p class="info-text">Read-only field containing the API response</p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const userInput = document.getElementById('userInput');
+        const processBtn = document.getElementById('processBtn');
+        const processedOutput = document.getElementById('processedOutput');
+        const apiCallBtn = document.getElementById('apiCallBtn');
+        const apiResult = document.getElementById('apiResult');
+        const status = document.getElementById('status');
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status show ${type}`;
+        }
+
+        function hideStatus() {
+            status.className = 'status';
+        }
+
+        processBtn.addEventListener('click', async () => {
+            const input = userInput.value.trim();
+            if (!input) {
+                showStatus('Please enter some text', 'error');
+                return;
+            }
+
+            processBtn.disabled = true;
+            showStatus('Processing...', 'loading');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ input }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to process input');
+                }
+
+                const data = await response.json();
+                processedOutput.value = data.result;
+                apiCallBtn.disabled = false;
+                apiResult.value = '';
+                showStatus('Input processed successfully', 'success');
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                apiCallBtn.disabled = true;
+            } finally {
+                processBtn.disabled = false;
+            }
+        });
+
+        apiCallBtn.addEventListener('click', async () => {
+            const data = processedOutput.value.trim();
+            if (!data) {
+                showStatus('No processed data to send', 'error');
+                return;
+            }
+
+            apiCallBtn.disabled = true;
+            showStatus('Calling API...', 'loading');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/call', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ data }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to call API');
+                }
+
+                const result = await response.json();
+                apiResult.value = result.result;
+                showStatus('API called successfully', 'success');
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                apiCallBtn.disabled = false;
+            }
+        });
+
+        userInput.addEventListener('input', hideStatus);
+    </script>
+</body>
+</html>
