@@ -161,6 +161,64 @@
             color: #999;
             margin-top: 4px;
         }
+
+        .safety-settings {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .safety-settings h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .safety-settings p {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .safety-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .safety-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .safety-item label {
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .safety-item select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .safety-item select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 600px) {
+            .safety-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -182,6 +240,52 @@
                 <p class="info-text">Enter any text you want to process</p>
             </div>
 
+            <div class="safety-settings">
+                <h3>Safety Settings</h3>
+                <p>Configure how strict the content filtering should be for each category:</p>
+                <div class="safety-grid">
+                    <div class="safety-item">
+                        <label for="harassment">Harassment</label>
+                        <select id="harassment">
+                            <option value="block_none">No Blocking</option>
+                            <option value="block_only_high">Block Only High</option>
+                            <option value="block_medium_and_above" selected>Block Medium and Above</option>
+                            <option value="block_low_and_above">Block Low and Above</option>
+                        </select>
+                    </div>
+
+                    <div class="safety-item">
+                        <label for="hate_speech">Hate Speech</label>
+                        <select id="hate_speech">
+                            <option value="block_none">No Blocking</option>
+                            <option value="block_only_high">Block Only High</option>
+                            <option value="block_medium_and_above" selected>Block Medium and Above</option>
+                            <option value="block_low_and_above">Block Low and Above</option>
+                        </select>
+                    </div>
+
+                    <div class="safety-item">
+                        <label for="sexually_explicit">Sexually Explicit Content</label>
+                        <select id="sexually_explicit">
+                            <option value="block_none">No Blocking</option>
+                            <option value="block_only_high">Block Only High</option>
+                            <option value="block_medium_and_above" selected>Block Medium and Above</option>
+                            <option value="block_low_and_above">Block Low and Above</option>
+                        </select>
+                    </div>
+
+                    <div class="safety-item">
+                        <label for="dangerous_content">Dangerous Content</label>
+                        <select id="dangerous_content">
+                            <option value="block_none">No Blocking</option>
+                            <option value="block_only_high">Block Only High</option>
+                            <option value="block_medium_and_above" selected>Block Medium and Above</option>
+                            <option value="block_low_and_above">Block Low and Above</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="button-group">
                 <button type="button" class="btn-primary" id="processBtn">
                     Process Input
@@ -199,6 +303,9 @@
             </div>
 
             <div class="button-group">
+                <button type="button" class="btn-secondary" id="copyOutputBtn" disabled>
+                    Copy Output
+                </button>
                 <button type="button" class="btn-secondary" id="apiCallBtn" disabled>
                     Call API Function
                 </button>
@@ -220,9 +327,16 @@
         const userInput = document.getElementById('userInput');
         const processBtn = document.getElementById('processBtn');
         const processedOutput = document.getElementById('processedOutput');
+        const copyOutputBtn = document.getElementById('copyOutputBtn');
         const apiCallBtn = document.getElementById('apiCallBtn');
         const apiResult = document.getElementById('apiResult');
         const status = document.getElementById('status');
+
+        // Safety settings elements
+        const harassmentSelect = document.getElementById('harassment');
+        const hateSpeechSelect = document.getElementById('hate_speech');
+        const sexuallyExplicitSelect = document.getElementById('sexually_explicit');
+        const dangerousContentSelect = document.getElementById('dangerous_content');
 
         function showStatus(message, type) {
             status.textContent = message;
@@ -231,6 +345,15 @@
 
         function hideStatus() {
             status.className = 'status';
+        }
+
+        function getSafetySettings() {
+            return {
+                harassment: harassmentSelect.value,
+                hate_speech: hateSpeechSelect.value,
+                sexually_explicit: sexuallyExplicitSelect.value,
+                dangerous_content: dangerousContentSelect.value
+            };
         }
 
         processBtn.addEventListener('click', async () => {
@@ -244,12 +367,16 @@
             showStatus('Processing...', 'loading');
 
             try {
+                const safetySettings = getSafetySettings();
                 const response = await fetch('http://localhost:5000/api/process', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ input }),
+                    body: JSON.stringify({ 
+                        input,
+                        safety_settings: safetySettings
+                    }),
                 });
 
                 if (!response.ok) {
@@ -303,6 +430,21 @@
         });
 
         userInput.addEventListener('input', hideStatus);
+
+        copyOutputBtn.addEventListener('click', async () => {
+            const text = processedOutput.value.trim();
+            if (!text) {
+                showStatus('No output to copy', 'error');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(text);
+                showStatus('Output copied to clipboard!', 'success');
+            } catch (error) {
+                showStatus(`Error copying to clipboard: ${error.message}`, 'error');
+            }
+        });
     </script>
 </body>
 </html>
