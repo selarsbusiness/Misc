@@ -214,6 +214,21 @@
             border-color: #667eea;
         }
 
+        .safety-item select[multiple] {
+            min-height: 120px;
+            padding: 8px;
+        }
+
+        .safety-item select[multiple] option {
+            padding: 4px;
+            margin: 2px 0;
+        }
+
+        .safety-item select[multiple] option:checked {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
         @media (max-width: 600px) {
             .safety-grid {
                 grid-template-columns: 1fr;
@@ -306,11 +321,15 @@
                 <button type="button" class="btn-secondary" id="copyOutputBtn" disabled>
                     Copy Output
                 </button>
+                <!-- Not used
                 <button type="button" class="btn-secondary" id="apiCallBtn" disabled>
                     Call API Function
                 </button>
+                -->
+            
             </div>
 
+            <!-- Not used
             <div class="form-group">
                 <label for="apiResult">API Result</label>
                 <textarea 
@@ -320,6 +339,81 @@
                 ></textarea>
                 <p class="info-text">Read-only field containing the API response</p>
             </div>
+            -->
+
+            
+            <div class="safety-settings">
+                <h3>Music Settings</h3>
+                <p>Select your preferred music genres and study mode:</p>
+                <div class="safety-grid">
+                    <div class="safety-item">
+                        <label for="musicGenres">Music Genres (Multiple Select)</label>
+                        <select id="musicGenres" multiple>
+                            <option value="acoustic">Acoustic</option>
+                            <option value="ambient">Ambient</option>
+                            <option value="blues">Blues</option>
+                            <option value="classical">Classical</option>
+                            <option value="country">Country</option>
+                            <option value="dance">Dance</option>
+                            <option value="disco">Disco</option>
+                            <option value="edm">EDM</option>
+                            <option value="electronic">Electronic</option>
+                            <option value="funk">Funk</option>
+                            <option value="gospel">Gospel</option>
+                            <option value="hip-hop">Hip-Hop</option>
+                            <option value="house">House</option>
+                            <option value="indie">Indie</option>
+                            <option value="jazz">Jazz</option>
+                            <option value="latin">Latin</option>
+                            <option value="lo-fi">Lo-Fi</option>
+                            <option value="metal">Metal</option>
+                            <option value="new-age">New Age</option>
+                            <option value="orchestral">Orchestral</option>
+                            <option value="pop">Pop</option>
+                            <option value="punk">Punk</option>
+                            <option value="r-and-b">R&B</option>
+                            <option value="reggae">Reggae</option>
+                            <option value="rock">Rock</option>
+                            <option value="soul">Soul</option>
+                            <option value="synthwave">Synthwave</option>
+                            <option value="techno">Techno</option>
+                            <option value="trance">Trance</option>
+                            <option value="world">World</option>
+                        </select>
+                    </div>
+
+                    <div class="safety-item">
+                        <label for="studyMode">Study Mode</label>
+                        <select id="studyMode">
+                            <option value="">Select a study mode...</option>
+                            <option value="active_study">Active Study, 120 BPM</option>
+                            <option value="background_mem">Background Memorization, 60 BPM</option>
+                            <option value="passive_study">Passive Study, 80 BPM</option>
+                            <option value="relaxed_study">Relaxed Study, 100 BPM</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="genreField">Genre Tags</label>
+                <textarea 
+                    id="genreField" 
+                    readonly
+                    placeholder="Selected genres will appear here..."
+                ></textarea>
+                <p class="info-text">Read-only field containing selected music genres and study mode</p>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" id="insertTagBtn">
+                    Insert Tag
+                </button>
+                <button type="button" class="btn-secondary" id="clearGenreBtn">
+                    Clear Genre
+                </button>
+            </div>
+
         </form>
     </div>
 
@@ -331,6 +425,13 @@
         const apiCallBtn = document.getElementById('apiCallBtn');
         const apiResult = document.getElementById('apiResult');
         const status = document.getElementById('status');
+
+        // Music settings elements
+        const musicGenres = document.getElementById('musicGenres');
+        const studyMode = document.getElementById('studyMode');
+        const genreField = document.getElementById('genreField');
+        const insertTagBtn = document.getElementById('insertTagBtn');
+        const clearGenreBtn = document.getElementById('clearGenreBtn');
 
         // Safety settings elements
         const harassmentSelect = document.getElementById('harassment');
@@ -444,6 +545,46 @@
             } catch (error) {
                 showStatus(`Error copying to clipboard: ${error.message}`, 'error');
             }
+        });
+
+        // Insert tag button functionality
+        insertTagBtn.addEventListener('click', () => {
+            const selectedGenres = Array.from(musicGenres.selectedOptions).map(opt => opt.text);
+            const selectedMode = studyMode.options[studyMode.selectedIndex].text;
+
+            if (selectedGenres.length === 0 && !selectedMode) {
+                showStatus('Please select at least one genre or study mode', 'error');
+                return;
+            }
+
+            let tagText = '';
+            
+            if (selectedGenres.length > 0) {
+                tagText += selectedGenres.join(', ');
+            }
+            
+            if (selectedMode) {
+                if (tagText) {
+                    tagText += ' | ' + selectedMode;
+                } else {
+                    tagText = selectedMode;
+                }
+            }
+
+            // Append to genre field
+            if (genreField.value) {
+                genreField.value += '\n' + tagText;
+            } else {
+                genreField.value = tagText;
+            }
+
+            showStatus('Tag inserted successfully!', 'success');
+        });
+
+        // Clear genre button functionality
+        clearGenreBtn.addEventListener('click', () => {
+            genreField.value = '';
+            showStatus('Genre field cleared!', 'success');
         });
     </script>
 </body>
