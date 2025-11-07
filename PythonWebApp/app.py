@@ -2,12 +2,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-# Configure Gemini API - Add your API key here
-GEMINI_API_KEY = ""
+# Configure Gemini API - Read from environment variable
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
@@ -26,6 +27,9 @@ HARM_CATEGORIES = {
     "sexually_explicit": HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
     "dangerous_content": HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT
 }
+
+# System prompt to guide generation
+SYSTEM_PROMPT = "You are creating song lyrics to help the user remember facts about a concept or webpage. Be sure to give phonetic spelling of names and terms that could be difficult to pronounce for a user. Generate the lyrics for a song that uses a memorable repeating refrain to help the user memorize the information in the following webpage or text:"
 
 
 # Client function that calls Google Gemini API
@@ -48,6 +52,9 @@ def client_function(user_input: str, safety_settings: dict = None) -> str:
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         
+        # Prepend system prompt to user input
+        full_prompt = f"{SYSTEM_PROMPT}\n\n{user_input}"
+        
         # Build safety settings if provided
         safety_settings_list = []
         if safety_settings:
@@ -60,9 +67,9 @@ def client_function(user_input: str, safety_settings: dict = None) -> str:
         
         # Generate content with safety settings
         if safety_settings_list:
-            response = model.generate_content(user_input, safety_settings=safety_settings_list)
+            response = model.generate_content(full_prompt, safety_settings=safety_settings_list)
         else:
-            response = model.generate_content(user_input)
+            response = model.generate_content(full_prompt)
         
         return response.text
     except Exception as e:
