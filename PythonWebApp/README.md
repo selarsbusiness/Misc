@@ -14,13 +14,35 @@ PythonWebApp/
 
 ## Setup Instructions
 
-### 1. Install Python Dependencies
+### 1. Set Up Gemini API Key
+
+This application uses the Google Gemini API to generate song lyrics. You'll need to:
+
+1. Get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Set the `GEMINI_API_KEY` environment variable:
+
+**On Windows (PowerShell):**
+```powershell
+$env:GEMINI_API_KEY = "your-api-key-here"
+```
+
+**On Windows (Command Prompt):**
+```cmd
+set GEMINI_API_KEY=your-api-key-here
+```
+
+**On macOS/Linux:**
+```bash
+export GEMINI_API_KEY="your-api-key-here"
+```
+
+### 2. Install Python Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Run the Flask Server
+### 3. Run the Flask Server
 
 ```bash
 python app.py
@@ -28,7 +50,7 @@ python app.py
 
 The server will start on `http://localhost:5000`
 
-### 3. Open the Frontend
+### 4. Open the Frontend
 
 Open `index.html` in your web browser or serve it through a local web server:
 
